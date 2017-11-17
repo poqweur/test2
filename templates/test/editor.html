@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>自定义</title>
+    <script src="/static/js/tiny_mce_src.js"></script>
+<script>
+    tinymce.init({
+        'mode':'textareas',
+        'theme':'advanced',
+        'width':400,
+        'height':100,
+    })
+</script>
+</head>
+<body>
+<form action="/show/" method="post">
+    {% csrf_token %}
+    <textarea name="gcontent" id="" cols="30" rows="10"></textarea>
+    <input type="submit" value="ok">
+</form>
+</body>
+</html>

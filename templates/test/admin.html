@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>admin</title>
+</head>
+<body>
+<form action="/user/jiaoyan" method="post">
+    {% csrf_token %}
+    <input type="text" name="uname" id="" value="{{ name }}">
+    <input type="password" name="upassword" id="">
+    <input type="checkbox" name="remember" id="" {{ checked }}>
+    <input type="submit" value="提交">
+</form>
+</body>
+</html>
