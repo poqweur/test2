@@ -149,3 +149,13 @@ CACHES = {
 }
 # 如果用户没有登入，则重定向到settings.LOGIN_URL
 LOGIN_URL='/user/login'
+
+#设置存储类
+FDFS_CLIENT_CONF='./utils.fdfs.storage.FDFSStorage'
+
+#设置django默认文件存储类,默认的Storage 类，用于没有指定文件系统的任何和文件相关的操作
+DEFAULT_FILE_STORAGE='fatherclass.文件存储.文件存储类'
+#设置fast dfs 客户端配置文件路径
+FDFS_配置路径='./fatherclass/client.conf'
+#设置fast dfs 文件存储服务器上的nginx的ip和端口
+FDFS_URL='http://192.168.109.131:8888/'

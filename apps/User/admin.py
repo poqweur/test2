@@ -6,3 +6,4 @@ from django.contrib import admin
 #     list_display = ['id']
 #
 # admin.site.register(GoodInfo,富文本)
+

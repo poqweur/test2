@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect#重定向
 from django.core.urlresolvers import reverse#重定向反向解析
 from django.http import HttpResponse
 from django.conf import settings
-from django_redis import get_redis_connection
+from django_redis import get_redis_connection#django包提供的redis连接对象
 from django.views.generic import View#类视图调用父类
 from celery_tasks.tasks import send_register_actie_email#导入队列类发送邮件
 import re
