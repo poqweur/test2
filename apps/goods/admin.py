@@ -25,9 +25,9 @@ class 根据表中的数据生成新的静态页面(admin.ModelAdmin):
         from celery_tasks.tasks import generate_static_index_html
         generate_static_index_html.delay()
 
-admin.site.register(GoodsType)
-admin.site.register(GoodSKU,Good)
-admin.site.register(Goods,Good)
-admin.site.register(IndexGoodsBanner)
-admin.site.register(IndexTypeGoodsBanner)
+admin.site.register(GoodsType,根据表中的数据生成新的静态页面)
+admin.site.register(GoodSKU,根据表中的数据生成新的静态页面)
+admin.site.register(Goods,根据表中的数据生成新的静态页面)
+admin.site.register(IndexGoodsBanner,根据表中的数据生成新的静态页面)
+admin.site.register(IndexTypeGoodsBanner,根据表中的数据生成新的静态页面)
 admin.site.register(IndexPromotionBanner,根据表中的数据生成新的静态页面)
