@@ -10,6 +10,7 @@ from fatherclass.Login import 自定义视图父类
 class 购物车记录添加(View):
     def post(self, request):
         user=request.user
+        #判断用户是否登陆
         if user.is_authenticated():
             #接收数据
             sku_id=request.POST.get('sku_id')

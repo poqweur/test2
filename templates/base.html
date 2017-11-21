@@ -34,7 +34,7 @@
 					<span>|</span>
 					<a href="{% url 'User:userinfoview' %}">用户中心</a>
 					<span>|</span>
-					<a href="cart.html">我的购物车</a>
+					<a href="{% url 'cart:购物车页面显示' %}">我的购物车</a>
 					<span>|</span>
 					<a href="{% url 'User:userorderview' %}">我的订单</a>
 				</div>
@@ -49,7 +49,7 @@
 		<div class="search_con fl">
             <form action="/search" method="get">
                 <input type="text" class="input_text fl" name="q" placeholder="搜索商品">
-			<input type="button" class="input_btn fr" name="" value="搜索">
+			<input type="submit" class="input_btn fr" name="" value="搜索">
             </form>
 		</div>
 		<div class="guest_cart fr">

@@ -20,7 +20,7 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     # url(r'^tinymce/',include('tinymce.urls')),#富文本
     url(r'^user/', include('User.urls',namespace='User')),#添加反向解析
-    url('r^serach/',include('haystack.urls')),#全文检索
+    url(r'^search',include('haystack.urls')),#全文检索
     url(r'^cart/', include('cart.urls',namespace='cart')),
     # url(r'^order/', include('order.urls',namespace='order')),
     url(r'^', include('goods.urls',namespace='goods')),

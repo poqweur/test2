@@ -84,7 +84,7 @@ class 商品详情(View):
             cart_key='cart_%d'%user.id
             cart_count = conn.hlen(cart_key)
             #添加历史浏览记录
-            conn=get_redis_connection('default')
+            # conn=get_redis_connection('default')
             history_key='history_%d'%user.id
             #先尝试移除列表中对应元素
             conn.lrem(history_key,0,sku_id)
@@ -134,7 +134,7 @@ class 商品列表(View):
         sku=GoodSKU.objects.filter(typeof=typeof).order_by(sot)
         from  django.core.paginator import Paginator
         #对数据进行分页每页显示n个
-        paginator=Paginator(sku,3)
+        paginator=Paginator(sku,1)
         #处理页码
         try:
             page=int(page)
@@ -153,6 +153,7 @@ class 商品列表(View):
         #当前页属于后3页,显示后5页
         #其他情况,显示当前页前两页和后两页
         num_pages=paginator.num_pages
+        print(num_pages)
         if num_pages <5:
             pages=range(1,num_pages+1)
         elif page <=3:
@@ -180,6 +181,7 @@ class 商品列表(View):
             'skus_page':skus_page,
             'new_sku':new_sku,
             'cart_count':cart_count,
+            'pages':pages,
             'sort':sort
         }
 
