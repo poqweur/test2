@@ -1,5 +1,6 @@
 from django.shortcuts import render,redirect
 from django.core.urlresolvers import reverse
+from django.core.cache import cache
 from django.views.generic import View#导入视图父类
 from django_redis import get_redis_connection
 from order.models import OrderGoods
@@ -12,19 +13,35 @@ from goods.models import GoodsType,IndexGoodsBanner,IndexTypeGoodsBanner,IndexPr
 class 首页视图(View):
     def get(self,request):
         '''显示'''
-        #获取商品的分类信息
-        types=GoodsType.objects.all()
-        #获取首页轮播商品细细
-        goods_banner=IndexGoodsBanner.objects.all().order_by('index')
-        #获取首页促销活动信息
-        promotion_banner=IndexPromotionBanner.objects.all().order_by('index')
-        #获取首页分类商品展示信息
-        for type in types:
-            image_banner=IndexTypeGoodsBanner.objects.filter(type=type,display_type=1).order_by('index')
-            title_banner=IndexTypeGoodsBanner.objects.filter(type=type,display_type=0).order_by('index')
-            #给对象动态增加属性,分别保存首页展示的图片商品信息和标题信息
-            type.image_banner=image_banner
-            type.title_banner=title_banner
+        #尝试从缓存中获取数据
+        context=cache.get('index_page_data')
+
+        if context is None:
+            print('设置缓存了')
+            #缓存中没有数据
+            #获取商品的分类信息
+            types=GoodsType.objects.all()
+            #获取首页轮播商品细细
+            goods_banner=IndexGoodsBanner.objects.all().order_by('index')
+            #获取首页促销活动信息
+            promotion_banner=IndexPromotionBanner.objects.all().order_by('index')
+            #获取首页分类商品展示信息
+            for type in types:
+                image_banner=IndexTypeGoodsBanner.objects.filter(type=type,display_type=1).order_by('index')
+                title_banner=IndexTypeGoodsBanner.objects.filter(type=type,display_type=0).order_by('index')
+                #给对象动态增加属性,分别保存首页展示的图片商品信息和标题信息
+                type.image_banner=image_banner
+                type.title_banner=title_banner
+
+            # 组织模板上下文
+            context = {
+                'types': types,
+                'goods_banner': goods_banner,
+                'promotion_banner': promotion_banner,
+            }
+            #设置缓存数据
+            #缓存名称 缓存数据 过期时间
+            cache.set('index_page_data',context,3600)
         #获取购物车条数
         cart_count=0
         #判断用户是否登陆
@@ -35,13 +52,7 @@ class 首页视图(View):
             cart_key='cart_%d'%user.id
             #redis数据库查询用户购物车种类数量
             cart_count=conn.hlen(cart_key)
-        #组织模板上下文
-        context={
-            'types':types,
-            'goods_banner':goods_banner,
-            'promotion_banner':promotion_banner,
-            'cart_count':cart_count
-        }
+        context.update(cart_count=cart_count)
         return render(request,'index.html',context)
 
 #/goods/商品id
@@ -135,6 +146,22 @@ class 商品列表(View):
         #获取page页的内容
         #返回的是page类的实例对象
         skus_page=paginator.page(page)
+
+        #控制页码的列表最多在页面上显示5页
+        #1.页码小于5页,显示所有页码
+        #2.当前页属于前3页,显示前5页
+        #当前页属于后3页,显示后5页
+        #其他情况,显示当前页前两页和后两页
+        num_pages=paginator.num_pages
+        if num_pages <5:
+            pages=range(1,num_pages+1)
+        elif page <=3:
+            pages=range(1,6)
+        elif num_pages-page <=2:
+            pages =range(num_pages-4,num_pages+1)
+        else:
+            pages=range(page-2,page+3)
+
         # 获取新品信息
         new_sku = GoodSKU.objects.filter(typeof=typeof).order_by('-create_time')[:2]
 
@@ -157,6 +184,8 @@ class 商品列表(View):
         }
 
         return render(request,'list.html',context)
+
+
 
 
 
