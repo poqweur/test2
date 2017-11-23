@@ -14,18 +14,20 @@ from datetime import datetime
 class 提交订单页面(自定义视图父类, View):
     def post(self, request):
         # 接收数据
-        skulist = request.POST.getlist('sku_id')
+        skulist = request.POST.getlist('sku_ids')
+        print(skulist)
         # 进行校验
         if not skulist:
             # 如果用户提交空的购物车跳转
-            return redirect(reverse('cart:提交订单页面'))
+            return redirect(reverse('cart:购物车页面显示'))
         # 业务处理
         # 获取用户的地址信息
         addrs = Address.object.all()
 
         user = request.user
-        conn = get_redis_connection()
+        conn = get_redis_connection('default')
         cart_key = 'cart_%d' % user.id
+        #保存总数量和总金额
         total_count = 0
         total_price = 0
         skus = []
@@ -40,7 +42,9 @@ class 提交订单页面(自定义视图父类, View):
             sku.amount = amount
             sku.count = count
             skus.append(sku)
+            #总件数
             total_count += int(count)
+            #总金额
             total_price += amount
 
         # 运费
@@ -48,6 +52,8 @@ class 提交订单页面(自定义视图父类, View):
 
         # 实际付款
         total_pay = total_price + transit_price
+        #商品id列表转化成字符串
+        sku_ids=','.join(skulist)
         # 组织上下文
         context = {
             'addrs': addrs,
@@ -55,7 +61,8 @@ class 提交订单页面(自定义视图父类, View):
             'total_count': total_count,
             'total_price': total_price,
             'total_pay': total_pay,
-            'transit_price': transit_price
+            'transit_price': transit_price,
+            'sku_ids':sku_ids
         }
 
         return render(request, 'place_order.html', context)
@@ -63,7 +70,7 @@ class 提交订单页面(自定义视图父类, View):
 
 # 创建订单
 # 前段发起ajax请求
-# 前段传递:地址id 支付方式 用户要购买商品的id
+# 前段传递:地址id->addr_id 支付方式pay_method 用户要购买商品的id->sku_ids
 # order/commit
 # 用户每下一个订单,需要向订单信息表添加一条信息
 # 向订单商品表中添加信息是,用户买了几件商品添加几条记录
@@ -80,12 +87,18 @@ class 订单创建(View):
         addr_id = request.POST.get('addr_id')
         pay_method = request.POST.get('pay_method')
         sku_ids = request.POST.get('sku_ids')
+        print(addr_id)
+        print(type(addr_id))
+        print(pay_method)
+        print(sku_ids)
         # 数据校验
         if not all([addr_id, pay_method, sku_ids]):
             return JsonResponse({'res': 1, 'errmsg': '数据不完整'})
+
         # 校验支付方式
-        if pay_method not in OrderInfo.PAY_METHOOS():
+        if pay_method not in OrderInfo.PAY_METHODS.keys():
             return JsonResponse({'res': 2, 'errmsg': '非法支付方式'})
+
         # 校验地址
         try:
             addr = Address.object.get(id=addr_id)
@@ -94,10 +107,8 @@ class 订单创建(View):
             return JsonResponse({'res': 3, 'errmsg': '地址信息错误'})
 
         # 业务处理
-
         # 组织订单数据
-
-        # 订单id:格式:20171122122930+用户id
+        #todo: 订单id:格式:20171122122930+用户id
         order_id = datetime.now().strftime('%Y%m%d%H%M%S') + str(user.id)
 
         # 运费
@@ -106,7 +117,7 @@ class 订单创建(View):
         # 总金额和总数目
         total_count = 0
         total_price = 0
-        # 向订单信息表中添加已条记录
+        #todo: 向订单信息表中添加已条记录
         order = OrderInfo.objects.create(order_id=order_id,
                                          user=user,
                                          addr=addr,
@@ -116,18 +127,20 @@ class 订单创建(View):
                                          transit_price=transit_price
                                          )
 
-        # 向订单商品表中添加信息时,用户买了及件商品,需要添加几条记录
-        sku_ids = sku_ids.splite(',')
-        conn = get_redis_connection()
+        # todo:向订单商品表中添加信息时,用户买了几件商品,需要添加几条记录
+        skulist = sku_ids.split(',')
+        conn = get_redis_connection('default')
         cart_key = 'cart_%d' % user.id
-        for sku_id in sku_ids:
+        print(cart_key)
+        for sku_id in skulist:
             try:
                 sku = GoodSKU.objects.get(id=sku_id)
-            except:
+            except GoodSKU.DoesNotExist:
+                #商品不存在
                 return JsonResponse({'res': 4, 'errmsg': '商品不存在'})
             # 从redis中获取用户需要购买的商品信息
             count = conn.hget(cart_key, sku_id)
-            # 向订单表中添加已条记录
+            # todo:向订单表中添加已条记录
             OrderGoods.objects.create(
                 order=order,
                 sku=sku,
@@ -137,18 +150,19 @@ class 订单创建(View):
 
             # 更新对应商品的库存和销量
             sku.stock -= int(count)
-            sku.sales -= int(count)
+            sku.sales += int(count)
             sku.save()
             # 累加订单中商品总数目和总金额
             total_count += int(count)
             amount = sku.price * int(count)
             total_price += amount
-        # 更新订单信息表对应的总件数和总金额
+        #todo: 更新订单信息表对应的总件数和总金额
         order.total_count = total_count
         order.total_price = total_price
+
         order.save()
 
-        # 删除用户购物车中的相应记录
-        conn.hdel(cart_key, *sku_ids)
+        # todo:删除用户购物车中的相应记录
+        conn.hdel(cart_key, *skulist)
 
         return JsonResponse({'res': 5, 'errmsg': '订单创建成功'})
