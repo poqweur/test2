@@ -15,7 +15,9 @@ urlpatterns=[
     url(r'^active/(?P<token>.*)',激活账户.as_view(),name='激活账户'),
     url(r'^login',登录.as_view(),name='登录'),
     url(r'^user',userinfoview.as_view(),name='userinfoview'),
-    url(r'^order',userorderview.as_view(),name='userorderview'),
+    url(r'^order/(?P<page>.+)$',userorderview.as_view(),name='userorderview'),
     url(r'^addr',addressview.as_view(),name='addressview'),
-    url(r'^out',退出.as_view(),name='退出')
+    url(r'^out',退出.as_view(),name='退出'),
+    # url(r'^order',用户订单页.as_view(),name='order'),
+    # url(r'^address$',)
 ]

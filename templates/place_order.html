@@ -94,24 +94,26 @@
             $.post('/order/commit',params,function (data) {
                 if(data.res==5){
                     //订单创建成功
-                    alert('创建成功')
+{#                    alert('创建成功')#}
+                    localStorage.setItem('order_finish',2);
+
+                    $('.popup_con').fadeIn('fast', function() {
+
+                        setTimeout(function(){
+                            $('.popup_con').fadeOut('fast',function(){
+                                //跳转用户中心页面
+                                window.location.href = '/user/order/1';
+                            });
+                        },3000)
+
+			});
                 }
                 else {
                     //订单创建失败
                     alert(data.errmsg)
                 }
             });
-{#			localStorage.setItem('order_finish',2);#}
-{##}
-{#			$('.popup_con').fadeIn('fast', function() {#}
-{##}
-{#				setTimeout(function(){#}
-{#					$('.popup_con').fadeOut('fast',function(){#}
-{#						window.location.href = 'index.html';#}
-{#					});	#}
-{#				},3000)#}
-{#				#}
-{#			});#}
+
 		});
 	</script>
 {% endblock bottomfile %}
