@@ -217,7 +217,7 @@ class 订单支付(View):
             return JsonResponse({'res':0,'errmsg':'用户为登陆'})
         #校验参数
         order_id=request.POST.get('order_id')
-        print(order_id)
+        # print(order_id)
         if not order_id:
             return JsonResponse({'res':1,'errmsg':'订单id为空'})
 
@@ -226,7 +226,7 @@ class 订单支付(View):
                               user=user,
                               pay_method=3,
                               order_status=1)
-            print(order)
+            # print(order)
         except OrderInfo.DoesNotExist:
             #订单不存在
             return JsonResponse({'res':2,'errmsg':'订单id出错'})
@@ -241,7 +241,7 @@ class 订单支付(View):
             sign_type = "RSA2",  # RSA 或者 RSA2
             debug = True  # 默认False沙箱选True
         )
-        print(alipay)
+        # print(alipay)
         #调用支付宝下单接口
         # 电脑网站支付，需要跳转到https://openapi.alipay(沙箱)dev.com/gateway.do? + order_string
         total_pay=order.total_price+order.transit_price#Decimal
@@ -252,7 +252,7 @@ class 订单支付(View):
             return_url=None,
             notify_url=None  # 可选, 不填则使用默认notify url
         )
-        print(order_string)
+        # print(order_string)
         #返回应答
         pay_url='https://openapi.alipaydev.com/gateway.do?' + order_string
         return JsonResponse({'res':3,'pay_url':pay_url})
@@ -266,9 +266,10 @@ class 查询订单支付结果(View):
         user = request.user
         if not user.is_authenticated:
             return JsonResponse({'res': 0, 'errmsg': '用户为登陆'})
+
         # 校验参数
         order_id = request.POST.get('order_id')
-        print(order_id)
+
         if not order_id:
             return JsonResponse({'res': 1, 'errmsg': '订单id为空'})
 
@@ -290,38 +291,47 @@ class 查询订单支付结果(View):
             app_private_key_path=os.path.join(settings.BASE_DIR, 'apps/order/app_private_key.pem'),
             alipay_public_key_path=os.path.join(settings.BASE_DIR, 'apps/order/alipay_public_key.pem'),
             # 支付宝的公钥，验证支付宝回传消息使用，不是你自己的公钥,
-            sign_type="RSA2",  # RSA 或者 RSA2
-            debug=True  # 默认False沙箱选True
+            sign_type='RSA2',  # RSA 或者 RSA2
+            debug=True  # 真实环境False沙箱选True
         )
+        print(alipay)
         while True:
             #通过sdk调用支付宝交易查询接口alipay
-            response=alipay.api_alipay_trade_query(order_id)
-
-            '''{
-                "trade_no": "2017032121001004070200176844",#支付宝交易号
-                "code": "10000",#接口调用是否成功
-                "invoice_amount": "20.00",
-                "open_id": "20880072506750308812798160715407",
-                "fund_bill_list": [
-                    {
-                        "amount": "20.00",
-                        "fund_channel": "ALIPAYACCOUNT"
-                    }
-                ],
-                "buyer_logon_id": "csq***@sandbox.com",
-                "send_pay_date": "2017-03-21 13:29:17",
-                "receipt_amount": "20.00",
-                "out_trade_no": "out_trade_no15",
-                "buyer_pay_amount": "20.00",
-                "buyer_user_id": "2088102169481075",
-                "msg": "Success",
-                "point_amount": "0.00",
-                "trade_status": "TRADE_SUCCESS",#支付状态
-                "total_amount": "20.00"
-            }'''
+            try:
+                response=alipay.api_alipay_trade_query(order_id)
+            except Exception as e:
+                print(e)
+            # print(response)
+            '''
+            response = {
+                  "alipay_trade_query_response": {
+                    "trade_no": "2017032121001004070200176844",
+                    "code": "10000",
+                    "invoice_amount": "20.00",
+                    "open_id": "20880072506750308812798160715407",
+                    "fund_bill_list": [
+                          {
+                            "amount": "20.00",
+                            "fund_channel": "ALIPAYACCOUNT"
+                          }
+                    ],
+                    "buyer_logon_id": "csq***@sandbox.com",
+                    "send_pay_date": "2017-03-21 13:29:17",
+                    "receipt_amount": "20.00",
+                    "out_trade_no": "out_trade_no15",
+                    "buyer_pay_amount": "20.00",
+                    "buyer_user_id": "2088102169481075",
+                    "msg": "Success",
+                    "point_amount": "0.00",
+                    "trade_status": "TRADE_SUCCESS",
+                    "total_amount": "20.00"
+          },
+          "sign": ""
+        }
+            '''
 
             code=response.get('code')
-
+            print(4)
             if code == '10000' and response.get('trade_status') == 'TRADE_SUCCESS':
                 #支付成功
                 #进行处理:填写支付宝交易号，更新订单状态
@@ -340,6 +350,64 @@ class 查询订单支付结果(View):
             else:
                 #支付出错
                 return JsonResponse({'res':4,'errmsg':'支付出错'})
+
+class 订单评论(自定义视图父类,View):
+    def get(self,request,order_id):
+        user=request.user
+        #校验数据
+        if not order_id:
+            return redirect(reverse('user:userorderview'))
+        try:
+            order=OrderInfo.objects.get(order_id=order_id,user=user)
+        except OrderInfo.DoesNotExist:
+            return redirect(reverse('user:userorderview'))
+        #根据订单的状态获取标题
+        order.status_name=OrderInfo.ORDER_STATUS[order.order_status]
+
+        #获取订单商品信息
+        order_skus=OrderGoods.objects.filter(order_id=order_id)
+        for order_sku in order_skus:
+            #计算商品的小计
+            amount=order_sku.count
+            #动态给order增加amount属性,保存商品小计
+            order_sku.amount=amount
+        #动态给order增加order_skus属性,保存订单商品信息
+        order.order_skus=order_skus
+        #使用模板
+        return render(request,'order_comment.html',{'order':order})
+
+    def post(self,request,order_id):
+        '''处理评论内容'''
+        user=request.user
+        #校验数据
+        if not user.is_authenticated:
+            return redirect(reverse('User:userorderview'))
+        try:
+            order=OrderInfo.objects.get(order_id=order_id)
+        except OrderInfo.DoesNotExist:
+            return redirect(reverse('User:userorderview'))
+
+        #获取评论条数
+        total_count=request.POST.get('total_count')
+        total_count=int(total_count)
+
+        for i in range(1,total_count+1):
+            #获取评论的商品id
+            sku_id=request.POST.get('sku_%d'%i)
+            #获取评论的商品的内容
+            content=request.POST.get('content_%d'%i,'')
+            try:
+                order_goods=OrderGoods.objects.get(order=order,sku_id=sku_id)
+            except OrderGoods.DoesNotExist:
+                continue
+
+            order_goods.comment=content
+            order_goods.save()
+        order.order_status=5#已完成
+        order.save()
+
+        return redirect(reverse("User:userorderview",kwargs={'page':1}))
+
 
 class 订单创建2(View):
     @transaction.atomic#事务开始mysql中的begin

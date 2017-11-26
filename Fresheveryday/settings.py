@@ -25,9 +25,9 @@ sys.path.append(os.path.join(BASE_DIR,'apps'))
 SECRET_KEY = 'pq=h=$52ync+gpyzijjgs^7##pz*@_&bl&vi$hh0jmwk7ugdv9'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False #是否是调试模式false是正式上线
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -114,6 +114,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS= [os.path.join(BASE_DIR,'static')]
+#配置收集静态文件路径在家目录下
+#python manage.py collectstatic
+STATIC_ROOT='/var/www/Fresheveryday/static'
 
 #设置富文本
 TINYMCE_DEFAULT_CONFIG={

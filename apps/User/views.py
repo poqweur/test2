@@ -244,7 +244,7 @@ class userorderview(自定义视图父类,View):
             order.order_skus = order_skus
 
         # 分页
-        paginator = Paginator(orders, 1)
+        paginator = Paginator(orders, 5)
 
         # 处理页码
         try:

@@ -55,9 +55,23 @@
 {% block bottomfile %}
     <script src="{% static 'js/jquery-1.12.4.min.js' %}"></script>
     <script>
+    $('.oper_btn').each(function () {
+        //获取支付状态
+        var status=$(this).attr('status');
+        if (status==1){
+            $(this).text('去支付')
+        }
+        else if (status==4){
+            $(this).text('去评价')
+        }
+        else if(status==5){
+            $(this).text('已完成')
+        }
+    })
     $('.oper_btn').click(function () {
         //获取status
         var status=$(this).attr('status');
+        var order_id=$(this).attr('order_id')
         if(status==1){
             //进行订单支付
             var order_id=$(this).attr('order_id');
@@ -68,13 +82,13 @@
                 if(data.res==3){
                     window.open(data.pay_url);
                     //查询用户订单是否支付成功
-                    //采用ajax post访问/order/check
+                    //采用ajax post访问/order/check,传递参数:订单id(order_id)
                     $.post('/order/check',params,function (data) {
                         if (data.res==3){
                             alert('支付成功')
                         }
                         else {
-                            alert('支付失败')
+                            alert(data.errmsg)
                         }
                     })
                 }
@@ -82,6 +96,10 @@
                     alert(data.errmsg)
                 }
             })
+        }
+        else if(status==4){
+            //跳转评价页面
+            location.href='/order/comment/'+order_id
         }
     })
     </script>
